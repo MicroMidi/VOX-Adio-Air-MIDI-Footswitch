@@ -1,4 +1,4 @@
-/**
+//**
    --------------------------------------------------------
    This example shows how to use client MidiBLE
    Client BLEMIDI works im a similar way Server (Common) BLEMIDI, but with some exception.
@@ -51,7 +51,8 @@ BLEMIDI_CREATE_DEFAULT_INSTANCE(); //Connect to first server found
 #endif
 
 #define PIN_LED    4
-#define PIN_BUTTON 13
+#define PIN_BUTTON_UP 13
+#define PIN_BUTTON_DOWN 12
 #define MAX_EFFECT_COUNT 8
 
 #define SEG_G 21
@@ -64,7 +65,8 @@ BLEMIDI_CREATE_DEFAULT_INSTANCE(); //Connect to first server found
 #define SEG_DP 27
 AdvanceSevenSegment sevenSegment(SEG_A, SEG_B, SEG_C, SEG_D, SEG_E, SEG_F, SEG_G, SEG_DP);
 
-Switch pushButton = Switch(PIN_BUTTON);
+Switch pushButtonUp = Switch(PIN_BUTTON_UP);
+Switch pushButtonDown = Switch(PIN_BUTTON_DOWN);
 
 void ReadCB(void *parameter);       //Continuos Read function (See FreeRTOS multitasks)
 
@@ -144,7 +146,7 @@ void setup()
       Serial.print(" ");
     }
     Serial.println();
-    for (uint16_t i = 0; i < SysExSize && (SysExArray[i] == adioEffect0[i]); i++)
+    for (uint16_t i = 0; i < SysExSize && ((SysExArray[i] == adioEffect0[i]) || (SysExArray[i] == adioModeData[i])); i++)
     {
       adioBank++;
     }
@@ -205,14 +207,14 @@ void loop()
 
       MIDI.sendSysEx(sizeof(adioDeviceInquiry), adioDeviceInquiry, true);
       MIDI.sendSysEx(sizeof(adioModeRequest), adioModeRequest, true);
-      MIDI.sendSysEx(sizeof(adioEffect0), adioEffect0, true);
+      // MIDI.sendSysEx(sizeof(adioEffect0), adioEffect0, true);
 
       sevenSegment.setNumber(1);
     }
 
-    pushButton.poll();
+    pushButtonUp.poll();
 
-    if (pushButton.longPress()) {
+    if (pushButtonUp.longPress()) {
       if (LEDState == LOW)
         LEDState = HIGH;
       else
@@ -226,7 +228,7 @@ void loop()
       sevenSegment.setNumber(CurrentEffect + 1);
     }
 
-    if (pushButton.pushed()) {
+    if (pushButtonUp.pushed()) {
       if (LEDState == LOW)
         LEDState = HIGH;
       else
@@ -238,6 +240,26 @@ void loop()
         CurrentEffect++;
       else
         CurrentEffect = 0;
+
+      adioEffect[8] = CurrentEffect;
+      MIDI.sendSysEx(sizeof(adioEffect), adioEffect, true);
+      sevenSegment.setNumber(CurrentEffect + 1);
+    }
+
+    pushButtonDown.poll();
+
+    if (pushButtonDown.pushed()) {
+      if (LEDState == LOW)
+        LEDState = HIGH;
+      else
+        LEDState = LOW;
+
+      digitalWrite(PIN_LED, LEDState);
+
+      if (CurrentEffect > 0)
+        CurrentEffect--;
+      else
+        CurrentEffect = (MAX_EFFECT_COUNT - 1);
 
       adioEffect[8] = CurrentEffect;
       MIDI.sendSysEx(sizeof(adioEffect), adioEffect, true);
