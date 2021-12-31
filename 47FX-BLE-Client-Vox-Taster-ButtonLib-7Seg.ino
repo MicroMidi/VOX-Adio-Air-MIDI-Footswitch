@@ -1,4 +1,4 @@
-//**
+/**
    --------------------------------------------------------
    This example shows how to use client MidiBLE
    Client BLEMIDI works im a similar way Server (Common) BLEMIDI, but with some exception.
@@ -25,20 +25,16 @@
    --------------------------------------------------------
 */
 
+// Uncomment for DEBUG-messages on serial port
+// #define MY_ADIO_DEBUG
+
 #include <Arduino.h>
+
 #include <avdweb_Switch.h>
-#include <BLEMIDI_Transport.h>
-
-#include <hardware/BLEMIDI_Client_ESP32.h>
-
 #include <AdvancedSevenSegment.h>
 
-
-
-//#include <hardware/BLEMIDI_ESP32_NimBLE.h>
-//#include <hardware/BLEMIDI_ESP32.h>
-//#include <hardware/BLEMIDI_nRF52.h>
-//#include <hardware/BLEMIDI_ArduinoBLE.h>
+#include <BLEMIDI_Transport.h>
+#include <hardware/BLEMIDI_Client_ESP32.h>
 
 BLEMIDI_CREATE_DEFAULT_INSTANCE(); //Connect to first server found
 
@@ -63,6 +59,7 @@ BLEMIDI_CREATE_DEFAULT_INSTANCE(); //Connect to first server found
 #define SEG_D 33
 #define SEG_C 26
 #define SEG_DP 27
+
 AdvanceSevenSegment sevenSegment(SEG_A, SEG_B, SEG_C, SEG_D, SEG_E, SEG_F, SEG_G, SEG_DP);
 
 Switch pushButtonUp = Switch(PIN_BUTTON_UP);
@@ -71,7 +68,6 @@ Switch pushButtonDown = Switch(PIN_BUTTON_DOWN);
 void ReadCB(void *parameter);       //Continuos Read function (See FreeRTOS multitasks)
 
 unsigned long t0 = millis();
-unsigned long t1 = millis();
 bool isConnected = false;
 
 byte adioEffect0[] = { 0xF0, 0x42, 0x30, 0x00, 0x01, 0x41, 0x4E, 0x00, 0x00, 0xF7 };
@@ -86,8 +82,6 @@ byte CurrentEffect = 0;
 int LEDState = LOW;
 bool FirstRun = true;
 
-static NimBLEAdvertisedDevice* advDevice;
-
 /**
    -----------------------------------------------------------------------------
    When BLE is connected, LED will turn on (indicating that connection was successful)
@@ -95,10 +89,10 @@ static NimBLEAdvertisedDevice* advDevice;
    This is an easy and conveniant way to show that the connection is alive and working.
    -----------------------------------------------------------------------------
 */
+
 void setup()
 {
   pinMode(PIN_LED, OUTPUT);
-  // pinMode(PIN_BUTTON, INPUT);
   Serial.begin(115200);
   MIDI.begin(MIDI_CHANNEL_OMNI);
 
@@ -109,8 +103,8 @@ void setup()
     Serial.println("---------CONNECTED---------");
     isConnected = true;
     digitalWrite(LED_BUILTIN, HIGH);
-    // Serial.println(advDevice->toString().c_str());
     FirstRun = true;
+    // MicroMidi: Define the starting point of the 400ms delay the Vox amp needs before accepting MIDI messages
     t0 = millis();
   });
 
@@ -121,22 +115,9 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
   });
 
-  MIDI.setHandleControlChange([](byte channel, byte ControlNumber, byte ControlValue)
-  {
-    Serial.print("ControlChange: CH: ");
-    Serial.print(channel);
-    Serial.print(" | ");
-    Serial.print(ControlNumber);
-    Serial.print(", ");
-    Serial.println(ControlValue);
-
-    CurrentEffect = ControlValue;
-    sevenSegment.setNumber(CurrentEffect + 1);
-
-  });
-
   MIDI.setHandleSystemExclusive([](byte * SysExArray, unsigned SysExSize) {
     int adioBank = 0;
+#ifdef MY_ADIO_DEBUG
     Serial.print(F("SYSEX: ("));
     Serial.print(SysExSize);
     Serial.print(F(" bytes) "));
@@ -146,13 +127,16 @@ void setup()
       Serial.print(" ");
     }
     Serial.println();
+#endif
     for (uint16_t i = 0; i < SysExSize && ((SysExArray[i] == adioEffect0[i]) || (SysExArray[i] == adioModeData[i])); i++)
     {
       adioBank++;
     }
-    if (adioBank > 7) {
+    if (adioBank > 7){
+#ifdef MY_ADIO_DEBUG
       Serial.print("Bank Switched at Vox: ");
       Serial.println(CurrentEffect);
+#endif
       CurrentEffect = SysExArray[8];
       sevenSegment.setNumber(CurrentEffect + 1);
     }
@@ -169,22 +153,6 @@ void setup()
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  //BL: Wait for connection to be established
-  Serial.print("millis(): ");
-  Serial.println(millis());
-  Serial.print("t0: ");
-  Serial.println(t0);
-  //  while((millis() - t0) < 2000);
-  //          Serial.print("millis(): ");
-  //      Serial.println(millis());
-  //      Serial.print("t0: ");
-  //      Serial.println(t0);
-
-  // delay(2000);
-  //  t1=millis();
-  //  while((millis() - t1) < 2000)
-  //    MIDI.read();
-
 }
 
 // -----------------------------------------------------------------------------
@@ -196,14 +164,16 @@ void loop()
 
   if (isConnected )
   {
+    //MicroMidi: Wait 400ms after first connection was established
     if (FirstRun == true && (millis() - t0) > 400) {
-      // if (FirstRun == true) {
       FirstRun = false;
+#ifdef MY_ADIO_DEBUG
       Serial.println("First run");
       Serial.print("millis(): ");
       Serial.println(millis());
       Serial.print("t0: ");
       Serial.println(t0);
+#endif
 
       MIDI.sendSysEx(sizeof(adioDeviceInquiry), adioDeviceInquiry, true);
       MIDI.sendSysEx(sizeof(adioModeRequest), adioModeRequest, true);
@@ -285,25 +255,21 @@ void ReadCB(void *parameter)
 
     if (MIDI.read(MIDI_CHANNEL_OMNI))                // Is there a MIDI message incoming ?
     {
+#ifdef MY_ADIO_DEBUG
       Serial.println("MIDI message received!");
-      //      switch (MIDI.getType())     // Get the type of the message we caught
-      //      {
-      //        case midi::SystemExclusive:       // If it is a Program Change,
-      //          Serial.println("Message-Type SysEx");
-      //          Serial.println(MIDI.getData1());  // blink the LED a number of times
-      //          // correponding to the program number
-      //          // (0 to 127, it can last a while..)
-      //          break;
-      //        case midi::ControlChange:       // If it is a ControlChange,
-      //          Serial.println("Message-Type ControlChange");
-      //          Serial.println(MIDI.getData1());  // blink the LED a number of times
-      //          // correponding to the program number
-      //          // (0 to 127, it can last a while..)
-      //          break;
-      //        // See the online reference for other message types
-      //        default:
-      //          break;
-      //      }
+      switch (MIDI.getType())     // Get the type of the message we caught
+      {
+        case midi::SystemExclusive:       // If it is a SysEx message,
+          Serial.println("Message-Type SysEx");
+          break;
+        case midi::ControlChange:       // If it is a ControlChange,
+          Serial.println("Message-Type ControlChange");
+          break;
+        // See the online reference for other message types
+        default:
+          break;
+      }
+#endif
     }
     vTaskDelay(1 / portTICK_PERIOD_MS); //Feed the watchdog of FreeRTOS.
     //Serial.println(uxTaskGetStackHighWaterMark(NULL)); //Only for debug. You can see the watermark of the free resources assigned by the xTaskCreatePinnedToCore() function.
