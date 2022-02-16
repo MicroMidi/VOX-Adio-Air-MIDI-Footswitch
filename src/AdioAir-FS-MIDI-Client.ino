@@ -36,8 +36,8 @@
 #include <BLEMIDI_Transport.h>
 #include <hardware/BLEMIDI_Client_ESP32.h>
 
-BLEMIDI_CREATE_DEFAULT_INSTANCE(); //Connect to first server found
-
+BLEMIDI_CREATE_INSTANCE("Adio Air GT MIDI", MIDI)   //Connect to Vox Adio Air BLE-MIDI server 
+//BLEMIDI_CREATE_DEFAULT_INSTANCE();                //Connect to first server found
 //BLEMIDI_CREATE_INSTANCE("",MIDI)                  //Connect to the first server found
 //BLEMIDI_CREATE_INSTANCE("f2:c1:d9:36:e7:6b",MIDI) //Connect to a specific BLE address server
 //BLEMIDI_CREATE_INSTANCE("MyBLEserver",MIDI)       //Connect to a specific name server
@@ -96,6 +96,7 @@ void setup()
   MIDI.begin(MIDI_CHANNEL_OMNI);
 
   sevenSegment.clean();
+  sevenSegment.setNumber(0);
 
   BLEMIDI.setHandleConnected([]()
   {
@@ -112,6 +113,8 @@ void setup()
     Serial.println("---------NOT CONNECTED---------");
     isConnected = false;
     digitalWrite(LED_BUILTIN, LOW);
+    FirstRun = true;
+    sevenSegment.setNumber(0);
   });
 
   MIDI.setHandleSystemExclusive([](byte * SysExArray, unsigned SysExSize) {
