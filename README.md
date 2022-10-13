@@ -1,4 +1,4 @@
-# Adio-MIDI-Footswitch
+# Vox Adio Air MIDI-Footswitch
 # BLE MIDI Footswitch Project for VOX Adio Air GT/BS Amp 
 
 This project is intended to build a simple wireless footswitch for the Vox Adio Air GT/BS Amp based on the ESP32 microcontroller with integrated Bluetooth funtionality. In the current version the code supports two buttons: The first button is implemented to increment the effect-number, the second button to decrement the effect-number. A long press on the increment-button sets the effect back to the first bank in the Adio Amp.
