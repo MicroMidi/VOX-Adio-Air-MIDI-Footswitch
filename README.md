@@ -1,7 +1,7 @@
-# VOX Adio Ait GT/BS wireless Footswitch
-# BLE MIDI Footswitch Project for the VOX Adio Ait GT/BS
+# VOX Adio Air GT/BS wireless Footswitch
+# BLE MIDI Footswitch Project for the VOX Adio Air GT/BS
 
-This project is intended to build a simple wireless footswitch for the VOX Adio Ait GT/BS based on the ESP32 microcontroller with integrated Bluetooth functionality. The footswitch operates wireless and interacts via Bluetooth Low Energy (BLE) and MIDI commands directly with the VOX device.
+This project is intended to build a simple wireless footswitch for the VOX Adio Air GT/BS based on the ESP32 microcontroller with integrated Bluetooth functionality. The footswitch operates wireless and interacts via Bluetooth Low Energy (BLE) and MIDI commands directly with the VOX device.
 
 There are currently three variants of the code:
 - Generic ESP32 module with 7-segment LED-display: This variant is based on a generic ESP32 microcontroller and implements a wireless footswitch with two buttons and a seven segment display for showing the selected effect on the VOX device. In the current version the code supports two buttons: The first button is implemented to increment the effect-number, the second button to decrement the effect-number. A long press on the increment-button sets the effect back to the first effect of the VOX device. A seven segment LED-display shows the current effect that is selected, another optional LED toggles on/off with every button-press event.
