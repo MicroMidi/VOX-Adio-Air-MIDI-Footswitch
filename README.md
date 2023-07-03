@@ -1,5 +1,6 @@
 # VOX Adio Air GT/BS wireless Footswitch
 # BLE MIDI Footswitch Project for the VOX Adio Air GT/BS
+[![Github All Releases download count](https://img.shields.io/github/downloads/MicroMidi/VOX-Adio-Air-MIDI-Footswitch/total?style=flat-square)](https://github.com/MicroMidi/VOX-Adio-Air-MIDI-Footswitch/releases)
 
 This project is intended to build a simple wireless footswitch for the VOX Adio Air GT/BS based on the ESP32 microcontroller with integrated Bluetooth functionality. The footswitch operates wireless and interacts via Bluetooth Low Energy (BLE) and MIDI commands directly with the VOX device.
 
